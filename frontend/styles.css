@@ -1,0 +1,177 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6fb;
+  color: #162033;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #132238, #1e5aa8);
+  color: #fff;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+
+.subtitle {
+  max-width: 40rem;
+  margin-bottom: 0;
+  opacity: 0.9;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 8px 24px rgba(19, 34, 56, 0.08);
+}
+
+.status-panel,
+.lookup-panel {
+  grid-column: 1 / -1;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #5f6c80;
+  margin-bottom: 0.35rem;
+}
+
+form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.inline-form {
+  grid-template-columns: minmax(160px, 260px) auto;
+  align-items: end;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+.secondary-btn {
+  background: #0f172a;
+}
+
+.secondary-btn:hover {
+  background: #1e293b;
+}
+
+.helper,
+.message {
+  color: #475569;
+}
+
+.message.success {
+  color: #166534;
+}
+
+.message.error {
+  color: #b91c1c;
+}
+
+.result-card,
+.history-item {
+  border: 1px solid #d9e2f2;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #f8fbff;
+}
+
+.history-section {
+  margin-top: 1.25rem;
+}
+
+.history-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.history-item p,
+.result-card p {
+  margin: 0.25rem 0;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .hero {
+    flex-direction: column;
+  }
+
+  .inline-form {
+    grid-template-columns: 1fr;
+  }
+}
