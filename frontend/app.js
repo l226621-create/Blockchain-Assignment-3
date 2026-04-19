@@ -1,4 +1,4 @@
-const CONTRACT_ADDRESS = "0x9c017B499927f63b487CD15F7fCD430A0C4Df4BB";
+const CONTRACT_ADDRESS = "0x7441FC61fA5766EF1113935947e5780A931fF71B";
 const AMOY_CHAIN_ID = "0x13882";
 const ethersLib = window.ethers;
 
@@ -33,7 +33,7 @@ const CONTRACT_ABI = [
           { internalType: "uint8", name: "status", type: "uint8" },
           { internalType: "bool", name: "exists", type: "bool" }
         ],
-        internalType: "struct Khan_SupplyChain.Product",
+        internalType: "struct MustafaSajidBlockchain.Product",
         name: "",
         type: "tuple"
       }
@@ -52,7 +52,7 @@ const CONTRACT_ABI = [
           { internalType: "uint8", name: "status", type: "uint8" },
           { internalType: "uint256", name: "timestamp", type: "uint256" }
         ],
-        internalType: "struct Khan_SupplyChain.HistoryEntry[]",
+        internalType: "struct MustafaSajidBlockchain.HistoryEntry[]",
         name: "",
         type: "tuple[]"
       }
@@ -221,10 +221,33 @@ async function onAssignRole(event) {
   const role = Number(document.querySelector("#role-select").value);
 
   try {
+    if (!ethersLib.isAddress(account)) {
+      throw new Error("Enter a valid wallet address.");
+    }
+
+    if (![1, 2, 3, 4].includes(role)) {
+      throw new Error("Choose a valid role before submitting.");
+    }
+
+    const readContract = new ethersLib.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      new ethersLib.JsonRpcProvider("https://rpc-amoy.polygon.technology")
+    );
+
+    const [connectedAddress, contractOwner] = await Promise.all([
+      signer.getAddress(),
+      readContract.owner()
+    ]);
+
+    if (connectedAddress.toLowerCase() !== contractOwner.toLowerCase()) {
+      throw new Error("Switch to the contract owner wallet before assigning roles.");
+    }
+
     setMessage("Submitting role assignment transaction...");
-    const tx = await contract.assignRole(account, role);
-    await tx.wait();
-    setMessage(`Role assigned successfully. Tx: ${tx.hash}`, "success");
+    const txHash = await sendContractTransaction("assignRole", [account, role], 150000);
+    await provider.waitForTransaction(txHash);
+    setMessage(`Role assigned successfully. Tx: ${txHash}`, "success");
   } catch (error) {
     setMessage(formatError(error), "error");
   }
@@ -262,10 +285,41 @@ async function onTransferProduct(event) {
   const newOwner = document.querySelector("#new-owner-address").value.trim();
 
   try {
+    if (!ethersLib.isAddress(newOwner)) {
+      throw new Error("Enter a valid new owner wallet address.");
+    }
+
+    if (!productId || Number(productId) < 1) {
+      throw new Error("Enter a valid product ID.");
+    }
+
+    const readContract = new ethersLib.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      new ethersLib.JsonRpcProvider("https://rpc-amoy.polygon.technology")
+    );
+
+    const connectedAddress = await signer.getAddress();
+    const [product, senderRole, newOwnerRole] = await Promise.all([
+      readContract.getProduct(productId),
+      readContract.roles(connectedAddress),
+      readContract.roles(newOwner)
+    ]);
+
+    if (product.currentOwner.toLowerCase() !== connectedAddress.toLowerCase()) {
+      throw new Error("Switch to the wallet that currently owns this product before transferring it.");
+    }
+
+    if (!isValidRoleTransition(Number(senderRole), Number(newOwnerRole))) {
+      throw new Error(
+        `Invalid transfer route: ${ROLE_LABELS[Number(senderRole)] ?? "Unknown"} to ${ROLE_LABELS[Number(newOwnerRole)] ?? "Unknown"}.`
+      );
+    }
+
     setMessage("Submitting ownership transfer transaction...");
-    const tx = await contract.transferOwnership(productId, newOwner);
-    await tx.wait();
-    setMessage(`Ownership transferred successfully. Tx: ${tx.hash}`, "success");
+    const txHash = await sendContractTransaction("transferOwnership", [productId, newOwner], 180000);
+    await provider.waitForTransaction(txHash);
+    setMessage(`Ownership transferred successfully. Tx: ${txHash}`, "success");
     event.target.reset();
   } catch (error) {
     setMessage(formatError(error), "error");
@@ -329,6 +383,8 @@ function formatTimestamp(value) {
 function formatError(error) {
   return (
     error?.shortMessage ||
+    error?.info?.error?.data?.message ||
+    error?.info?.error?.data?.originalError?.message ||
     error?.info?.error?.message ||
     error?.reason ||
     error?.message ||
@@ -349,4 +405,52 @@ function getEthereumProvider() {
   }
 
   return injected;
+}
+
+function isValidRoleTransition(fromRole, toRole) {
+  return (
+    (fromRole === 1 && toRole === 2) ||
+    (fromRole === 2 && toRole === 3) ||
+    (fromRole === 3 && toRole === 4)
+  );
+}
+
+async function sendContractTransaction(functionName, args, gasLimit) {
+  if (!ethereumProvider || !signer) {
+    throw new Error("Connect your wallet before sending transactions.");
+  }
+
+  const from = await signer.getAddress();
+  const iface = new ethersLib.Interface(CONTRACT_ABI);
+  const data = iface.encodeFunctionData(functionName, args);
+  const feeOverrides = await getFeeOverrides();
+
+  return ethereumProvider.request({
+    method: "eth_sendTransaction",
+    params: [
+      {
+        from,
+        to: CONTRACT_ADDRESS,
+        data,
+        gas: ethersLib.toQuantity(BigInt(gasLimit)),
+        ...feeOverrides
+      }
+    ]
+  });
+}
+
+async function getFeeOverrides() {
+  const feeData = await provider.getFeeData();
+  const minimumPriorityFee = ethersLib.parseUnits("30", "gwei");
+  const priorityFee = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > minimumPriorityFee
+    ? feeData.maxPriorityFeePerGas
+    : minimumPriorityFee;
+
+  const baseMaxFee = feeData.maxFeePerGas ?? (priorityFee * 2n);
+  const maxFee = baseMaxFee > priorityFee * 2n ? baseMaxFee : priorityFee * 2n;
+
+  return {
+    maxPriorityFeePerGas: ethersLib.toQuantity(priorityFee),
+    maxFeePerGas: ethersLib.toQuantity(maxFee)
+  };
 }
