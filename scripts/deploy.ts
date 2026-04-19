@@ -4,9 +4,9 @@ const { ethers } = await network.connect();
 
 const [deployer] = await ethers.getSigners();
 
-console.log("Deploying Khan_SupplyChain with:", deployer.address);
+console.log("Deploying MUSTAFA SAJID BLOCKCHAIN with:", deployer.address);
 
-const supplyChain = await ethers.deployContract("Khan_SupplyChain");
+const supplyChain = await ethers.deployContract("MustafaSajidBlockchain");
 await supplyChain.waitForDeployment();
 
-console.log("Khan_SupplyChain deployed to:", await supplyChain.getAddress());
+console.log("MUSTAFA SAJID BLOCKCHAIN deployed to:", await supplyChain.getAddress());
